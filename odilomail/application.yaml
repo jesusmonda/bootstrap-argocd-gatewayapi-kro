@@ -1,9 +1,0 @@
-apiVersion: kro.run/v1alpha1
-kind: Odilomail
-metadata:
-  name: odilomail
-  namespace: odilomail
-spec:
-  deployment:
-    replicas: 1
-    image: nginx:latest

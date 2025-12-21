@@ -1,2 +1,0 @@
-helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system -f alb/values.yaml && 
-helm upgrade -i kro oci://registry.k8s.io/kro/charts/kro --namespace kro-system --create-namespace
