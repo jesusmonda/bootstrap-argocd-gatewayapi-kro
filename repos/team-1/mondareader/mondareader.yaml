@@ -1,0 +1,56 @@
+apiVersion: kro.run/v1alpha1
+kind: ResourceGraphDefinition
+metadata:
+  name: mondareader
+  namespace: team-1
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  schema:
+    apiVersion: v1alpha1
+    kind: Mondareader
+    spec:
+      deployment:
+        replicas: integer
+        image: string
+      configuration:
+        subnets: "[]map[string]string"
+        hostname: "[]string"
+  resources:
+    - id: deployment
+      template:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: ${schema.metadata.name}
+          namespace: ${schema.metadata.namespace}
+        spec:
+          replicas: ${schema.spec.deployment.replicas}
+          selector:
+            matchLabels:
+              app: ${schema.metadata.name}
+          template:
+            metadata:
+              labels:
+                app: ${schema.metadata.name}
+            spec:
+              containers:
+                - name: ${schema.metadata.name}
+                  image: ${schema.spec.deployment.image}
+                  ports:
+                    - containerPort: 80
+    - id: service
+      template:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: ${schema.metadata.name}
+          namespace: ${schema.metadata.namespace}
+        spec:
+          type: ClusterIP
+          selector:
+            app: ${schema.metadata.name}
+          ports:
+            - protocol: TCP
+              port: 80
+              targetPort: 80

@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: appsofapp
+  namespace: argo
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  sources:
+    - repoURL: https://github.com/jesusmonda/bootstrap-argocd-gatewayapi-kro.git
+      targetRevision: main
+      path: repos/team-devops/bootstrap-k8s/controllers
+      helm:
+        releaseName: controllers
+        valueFiles:
+          - values-pro.yaml
+    - repoURL: https://github.com/jesusmonda/bootstrap-argocd-gatewayapi-kro.git
+      targetRevision: main
+      path: repos/team-1/mondamail
+      directory:
+        include: 'argocd.yaml'
+    - repoURL: https://github.com/jesusmonda/bootstrap-argocd-gatewayapi-kro.git
+      targetRevision: main
+      path: repos/team-1/mondareader
+      directory:
+        include: 'argocd.yaml'
+    - repoURL: https://github.com/jesusmonda/bootstrap-argocd-gatewayapi-kro.git
+      targetRevision: main
+      path: repos/team-2/mondasample
+      directory:
+        include: 'argocd.yaml'
+    - repoURL: https://github.com/jesusmonda/bootstrap-argocd-gatewayapi-kro.git
+      targetRevision: main
+      path: repos/team-1/bootstrap-k8s
+      directory:
+        include: 'argocd.yaml'
+    - repoURL: https://github.com/jesusmonda/bootstrap-argocd-gatewayapi-kro.git
+      targetRevision: main
+      path: repos/team-2/bootstrap-k8s
+      directory:
+        include: 'argocd.yaml'
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 2
+      backoff:
+        duration: 5s
+        maxDuration: 3m0s
+        factor: 2

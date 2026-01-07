@@ -1,0 +1,42 @@
+apiVersion: gateway.k8s.aws/v1beta1
+kind: LoadBalancerConfiguration
+metadata:
+  name: alb
+  namespace: team-1
+spec:
+  scheme: internet-facing
+  loadBalancerSubnets:
+    - identifier: subnet-0390d8f395fd0f9bf
+    - identifier: subnet-0bf7ac29bffc2d0b2
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: alb
+  namespace: team-1
+spec:
+  gatewayClassName: gatewayclass
+  infrastructure:
+    parametersRef:
+      group: gateway.k8s.aws
+      kind: LoadBalancerConfiguration
+      name: alb
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+    allowedRoutes:
+      namespaces:
+        selector:
+          matchLabels:
+            teamName: "team-1"
+        from: Selector
+  - name: https
+    protocol: HTTPS
+    port: 443
+    allowedRoutes:
+      namespaces:
+        selector:
+          matchLabels:
+            teamName: "team-1"
+        from: Selector

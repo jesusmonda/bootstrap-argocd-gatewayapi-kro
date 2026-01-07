@@ -1,0 +1,9 @@
+apiVersion: kro.run/v1alpha1
+kind: Mondareader
+metadata:
+  name: mondareader
+  namespace: team-1
+spec:
+  deployment:
+    replicas: 1
+    image: nginx:latest

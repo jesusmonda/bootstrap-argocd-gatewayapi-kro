@@ -1,0 +1,11 @@
+apiVersion: kro.run/v1alpha1
+kind: Mondasample
+metadata:
+  name: mondasample
+  namespace: team-1
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  deployment:
+    replicas: 1
+    image: nginx:latest

@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bootstrap-k8s-team-2
+  namespace: argo
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+  sources:
+    - repoURL: https://github.com/jesusmonda/bootstrap-argocd-gatewayapi-kro.git
+      targetRevision: main
+      path: repos/team-2/bootstrap-k8s
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 2
+      backoff:
+        duration: 5s
+        maxDuration: 3m0s
+        factor: 2

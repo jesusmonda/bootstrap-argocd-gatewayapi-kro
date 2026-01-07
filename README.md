@@ -1,103 +1,82 @@
-# EKS Bootstrap with ArgoCD, KRO & Gateway API
+# EKS Multi-Team Bootstrap with ArgoCD, KRO & Gateway API
 
-Laboratory demonstrating professional EKS cluster bootstrap with GitOps, custom operators, and shared infrastructure patterns.
+Laboratory simulating multiple teams working on a shared EKS cluster, each with their own bootstrap and application repositories.
 
 ## 🎯 What This Lab Demonstrates
 
-- **EKS Bootstrap**: Automated cluster setup with essential controllers
-- **GitOps with ArgoCD**: Declarative infrastructure management
+- **Multi-Tenancy**: Multiple teams deploying on a shared cluster
+- **Per-Team Bootstrap**: Each team manages their own ArgoCD bootstrap
+- **GitOps with ArgoCD**: Declarative infrastructure management per team
 - **KRO (Kubernetes Resource Operator)**: Standardized application deployments
-- **Shared Gateway API**: Cost-efficient single ALB for multiple services
-- **Multi-Repository Pattern**: Separation of infrastructure, applications, and code
+- **Gateway API**: Gateway shared across Team 1 applications
+- **Multi-Repository Simulation**: Each team has their own independent repositories
 
-## 🏗️ Multi-Repository Architecture
+## 🏗️ Multi-Team Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Repository: k8s-infrastructure            │
-│                                                              │
-│  ┌──────────────┐         ┌─────────────────────┐          │
-│  │   ArgoCD     │────────▶│    Controllers      │          │
-│  │ (App of Apps)│         │  - ALB, EBS, EFS    │          │
-│  └──────────────┘         │  - KRO, Gateway API │          │
-│                           └─────────────────────┘          │
-│                                     │                        │
-│                           ┌─────────▼─────────┐            │
-│                           │  Shared Gateway   │            │
-│                           │  (Single ALB)     │            │
-│                           └─────────┬─────────┘            │
-└─────────────────────────────────────┼──────────────────────┘
-                                      │
-                    ┌─────────────────┴─────────────────┐
-                    │                                   │
-┌───────────────────▼──────────────┐  ┌────────────────▼──────────────┐
-│ Repository: k8s-applications     │  │ Repository: mondamail         │
-│                                  │  │                               │
-│  ┌────────────────────────┐     │  │  ┌──────────────────────┐    │
-│  │ mondamail/             │     │  │  │ src/                 │    │
-│  │  └─ application.yaml   │     │  │  │ Dockerfile           │    │
-│  │     (KRO Resource)     │     │  │  │ deployment.yaml      │    │
-│  │                        │     │  │  │  (KRO Config)        │    │
-│  │ service-2/             │     │  │  │   - replicas: 2      │    │
-│  │  └─ application.yaml   │     │  │  │   - env vars         │    │
-│  └────────────────────────┘     │  │  │   - resources        │    │
-│                                  │  │  └──────────────────────┘    │
-└──────────────────────────────────┘  └────────────────────────────┘
+                    ┌─────────────────────────────────────┐
+                    │      Shared EKS Cluster             │
+                    │                                     │
+                    │  ┌───────────────────────────────┐  │
+                    │  │   Controllers                 │  │
+                    │  │   (ALB, KRO, Gateway API)     │  │
+                    │  └───────────────────────────────┘  │
+                    └──────────────┬──────────────────────┘
+                                   │
+        ┌──────────────────────────┼──────────────────────────┐
+        │                          │                          │
+┌───────▼────────┐        ┌────────▼────────┐       ┌────────▼────────┐
+│  Team DevOps   │        │    Team 1       │       │    Team 2       │
+│                │        │  + Gateway      │       │                 │
+│                │        │                 │       │                 │
+│ Repo:          │        │ Repos:          │       │ Repos:          │
+│ bootstrap-k8s/ │        │ bootstrap-k8s/  │       │ bootstrap-k8s/  │
+│  └─ ArgoCD +   │        │  └─ Shared      │       │  └─ Shared      │
+│     Bootstrap  │        │     manifest    │       │     manifest    │
+│     Controllers│        │     files       │       │     files       │
+│                │        │                 │       │                 │
+│                │        │ mondamail/      │       │ mondasample/    │
+│                │        │  └─ src/        │       │  └─ src/        │
+│                │        │  └─ manifest    │       │  └─ manifest    │
+│                │        │     files       │       │     files       │
+│                │        │                 │       │                 │
+│                │        │ mondareader/    │       │                 │
+│                │        │  └─ src/        │       │                 │
+│                │        │  └─ manifest    │       │                 │
+│                │        │     files       │       │                 │
+└────────────────┘        └─────────────────┘       └─────────────────┘
+
+  Namespaces:             Namespace: team-1         Namespace: team-2
+  - argocd
+  - gateway-system
 ```
 
-## 🚀 Bootstrap Process
+## 📂 Project Structure
 
-### Step 1: Bootstrap ArgoCD
-
-```bash
-cd bootstrap/initial
-make deploy ENV=dev
 ```
-
-This installs:
-1. ArgoCD via Helmfile
-2. Configures ArgoCD namespace
-3. Deploys App of Apps pattern
-
-### Step 2: ArgoCD Deploys Controllers
-
-ArgoCD automatically syncs and installs:
-- AWS Load Balancer Controller
-- Gateway API CRDs
-- KRO Operator
-
-### Step 3: ArgoCD Deploys Shared Resources
-
-- Shared Gateway (single ALB)
-- Manual CRDs
-- Base configurations
-
-### Step 4: Deploy Applications
-
-In `k8s-applications` repository:
-
-```yaml
-# mondamail/application.yaml
-apiVersion: kro.run/v1alpha1
-kind: Mondamail
-metadata:
-  name: mondamail
-  namespace: production
-spec:
-  deployment:
-    replicas: 3
-    image: ghcr.io/org/mondamail:v1.2.0
-    env:
-      - name: DATABASE_URL
-        value: "postgres://..."
-  resources:
-    requests:
-      cpu: "200m"
-      memory: "256Mi"
+k8s/
+└── repos/                          # Simulates multiple repositories
+    ├── team-devops/
+    │   └── bootstrap-k8s/          # Shared infrastructure bootstrap
+    │       ├── controllers/        # ALB, EBS, EFS, KRO
+    │       └── applications.yaml   # App of Apps
+    │
+    ├── team-1/
+    │   ├── bootstrap-k8s/          # Team 1 bootstrap
+    │   │   ├── gateway/            # Team 1 Gateway
+    │   │   └── applications.yaml   # Team 1 apps
+    │   ├── mondamail/              # Application 1
+    │   │   ├── src/
+    │   │   ├── Dockerfile
+    │   │   └── application.yaml    # Manifest files
+    │   └── mondareader/            # Application 2
+    │       ├── src/
+    │       └── application.yaml
+    │
+    └── team-2/
+        ├── bootstrap-k8s/          # Team 2 bootstrap
+        │   └── applications.yaml   # Team 2 apps
+        └── mondasample/            # Application 1
+            ├── src/
+            └── application.yaml
 ```
-
-### Repository Separation
-
-- **k8s-infrastructure**: Platform team manages
-- **k8s-applications**: Platform team + App teams
-- **mondamail**: Developers own completely
